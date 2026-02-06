@@ -1,9 +1,9 @@
+import * as fs from 'node:fs/promises'
+import * as path from 'node:path'
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import * as tc from '@actions/tool-cache'
 import type { Octokit } from '@octokit/action'
-import * as fs from 'node:fs/promises'
-import * as path from 'node:path'
 import type { Context } from './github.js'
 
 type Inputs = {
@@ -254,7 +254,7 @@ const convertToRelativePath = (absolutePath: string): string => {
   if (relativePath.startsWith('..')) {
     // Try to find the first occurrence of a common directory like test_fixtures or db
     const parts = absolutePath.split(path.sep)
-    const relevantIndex = parts.findIndex(p => ['test_fixtures', 'db', 'src', 'changelog'].includes(p))
+    const relevantIndex = parts.findIndex((p) => ['test_fixtures', 'db', 'src', 'changelog'].includes(p))
     if (relevantIndex !== -1) {
       return parts.slice(relevantIndex).join('/')
     }

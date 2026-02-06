@@ -1,8 +1,8 @@
+import * as fs from 'node:fs/promises'
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import * as tc from '@actions/tool-cache'
 import type { Octokit } from '@octokit/action'
-import * as fs from 'node:fs/promises'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Context } from '../src/github.js'
 import { run } from '../src/run.js'
@@ -44,7 +44,7 @@ describe('run', () => {
     vi.mocked(fs.chmod).mockResolvedValue(undefined)
 
     // Mock core.info to avoid noise in tests
-    vi.mocked(core.info).mockImplementation(() => { })
+    vi.mocked(core.info).mockImplementation(() => {})
   })
 
   it('should successfully run with no violations', async () => {

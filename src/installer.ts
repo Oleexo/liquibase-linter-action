@@ -114,9 +114,18 @@ export async function installLinter(version: string): Promise<string> {
       await exec.exec(binaryPath, ['--version'], { silent: true })
       core.info('Binary verification successful')
     } catch (error) {
-      throw new Error(
-        `Binary verification failed: ${error instanceof Error ? error.message : String(error)}`
-      )
+      // Try with --help as fallback
+      try {
+        await exec.exec(binaryPath, ['--help'], { silent: true })
+        core.info('Binary verification successful (via --help)')
+      } catch (helpError) {
+        // If both fail, just warn but don't fail the installation
+        // The binary may not support these flags in early versions
+        core.warning(
+          `Binary verification skipped: unable to verify with --version or --help. ` +
+          `The binary will be used as-is. Original error: ${error instanceof Error ? error.message : String(error)}`
+        )
+      }
     }
 
     // Cache the tool

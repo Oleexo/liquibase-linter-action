@@ -1,0 +1,7 @@
+rules:
+  missing-rollback:
+    enabled: false
+  non-idempotent:
+    enabled: false
+file_structure:
+  enabled: false

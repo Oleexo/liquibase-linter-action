@@ -1,0 +1,11 @@
+# Test configuration for liquibase-linter
+rules:
+  sql-injection:
+    enabled: true
+    severity: critical
+  hardcoded-credentials:
+    enabled: true
+    severity: critical
+  missing-rollback:
+    enabled: true
+    severity: warning

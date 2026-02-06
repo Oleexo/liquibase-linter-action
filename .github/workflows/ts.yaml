@@ -22,6 +22,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
+      checks: write
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
@@ -33,10 +36,13 @@ jobs:
       - run: pnpm run test
       - run: pnpm run build
 
-      - name: Run int128/typescript-action
+      - name: Test Liquibase Linter Action
         uses: ./
         with:
-          name: foo
+          path: test_fixtures/db/changelog
+          config: test_fixtures/.liquibase-linter.yaml
+          version: v0.0.2
+          fail-on-critical: false
 
   generate:
     runs-on: ubuntu-latest

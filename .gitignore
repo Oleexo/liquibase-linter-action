@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+lib/
+*.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test coverage
+coverage/
+
+# Temporary files
+*.tmp
+.env
+
+# Keep dist/ for GitHub Actions
+# dist/ is intentionally tracked for the action to work

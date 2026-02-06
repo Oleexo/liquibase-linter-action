@@ -1,0 +1,97 @@
+# Sample Liquibase Linter Configuration
+
+# This is a sample configuration file for liquibase-linter
+# Save as .liquibase-linter.yaml in your repository root
+
+# Configure rules and their severity levels
+rules:
+  # Security rules (recommended: critical)
+  sql-injection:
+    enabled: true
+    severity: critical
+  
+  hardcoded-credentials:
+    enabled: true
+    severity: critical
+  
+  dangerous-operations:
+    enabled: true
+    severity: critical
+  
+  privilege-escalation:
+    enabled: true
+    severity: critical
+
+  # Reliability rules (recommended: warning)
+  missing-rollback:
+    enabled: true
+    severity: warning
+  
+  non-idempotent:
+    enabled: true
+    severity: warning
+  
+  missing-preconditions:
+    enabled: true
+    severity: warning
+
+  # Performance rules (recommended: info or warning)
+  missing-indexes:
+    enabled: true
+    severity: info
+  
+  table-locks:
+    enabled: true
+    severity: warning
+  
+  large-data-operations:
+    enabled: true
+    severity: info
+
+  # Best practice rules (recommended: info)
+  naming-conventions:
+    enabled: true
+    severity: info
+  
+  changelog-organization:
+    enabled: true
+    severity: info
+  
+  documentation:
+    enabled: true
+    severity: info
+
+# Ignore patterns (glob patterns relative to target directory)
+ignore:
+  # Ignore test fixtures
+  - "test/**"
+  - "tests/**"
+  - "**/test-data/**"
+  
+  # Ignore legacy changelogs (if you can't fix them immediately)
+  # - "legacy/**"
+  # - "old-migrations/**"
+
+# Output configuration
+output:
+  # Format: text, json, sarif, junit
+  format: json
+  
+  # Colorize output (text format only)
+  colorize: true
+
+# Parser configuration
+parser:
+  # Maximum depth for include/includeAll directives
+  max_include_depth: 10
+  
+  # Follow symbolic links when discovering changelog files
+  follow_symlinks: true
+
+# Minimum severity level to report (info, warning, critical)
+# Any violations below this level will be ignored
+severity_threshold: info
+
+# Note: The fail-on behavior is controlled by the GitHub Action input,
+# not this configuration file. This allows different CI/CD pipelines
+# to have different failure policies while using the same rules.

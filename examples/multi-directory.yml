@@ -1,0 +1,46 @@
+name: Multi-Directory Linting
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  lint-multiple-directories:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      # Don't cancel other jobs if one fails
+      fail-fast: false
+      
+      # Run for each directory
+      matrix:
+        directory:
+          - db/changelog/production
+          - db/changelog/staging
+          - db/changelog/development
+        include:
+          # Different fail-on settings per environment
+          - directory: db/changelog/production
+            fail-on: warning
+          - directory: db/changelog/staging
+            fail-on: critical
+          - directory: db/changelog/development
+            fail-on: never
+    
+    name: Lint ${{ matrix.directory }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Run Liquibase Linter
+        uses: n2jsoft-public-org/liquibase-linter-action@v1
+        with:
+          directory: ${{ matrix.directory }}
+          fail-on: ${{ matrix.fail-on }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}

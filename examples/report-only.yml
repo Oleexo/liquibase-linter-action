@@ -1,0 +1,40 @@
+name: Report Only (Never Fail)
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      # Run linter in report-only mode
+      - name: Run Liquibase Linter (Report Only)
+        id: linter
+        uses: n2jsoft-public-org/liquibase-linter-action@v1
+        with:
+          directory: db/changelog
+          fail-on: never  # Never fail the build
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      
+      # Still track metrics
+      - name: Track Metrics
+        run: |
+          echo "Found ${{ steps.linter.outputs.total-violations }} violations"
+          echo "Critical: ${{ steps.linter.outputs.critical-count }}"
+          echo "Warning: ${{ steps.linter.outputs.warning-count }}"
+          echo "Info: ${{ steps.linter.outputs.info-count }}"
+          
+          # You could send these to a monitoring system
+          # curl -X POST https://metrics.example.com/liquibase \
+          #   -d "critical=${{ steps.linter.outputs.critical-count }}" \
+          #   -d "warning=${{ steps.linter.outputs.warning-count }}"

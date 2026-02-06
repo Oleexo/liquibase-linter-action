@@ -1,0 +1,67 @@
+name: Advanced Liquibase Linting
+
+on:
+  pull_request:
+    paths:
+      - 'database/**'
+  push:
+    branches:
+      - main
+      - develop
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      # Run with custom configuration
+      - name: Run Liquibase Linter
+        id: linter
+        uses: n2jsoft-public-org/liquibase-linter-action@v1
+        with:
+          # Use specific version
+          version: v0.0.1
+          
+          # Custom directory path
+          directory: database/migrations
+          
+          # Use custom config file
+          config-file: .liquibase-linter.yaml
+          
+          # Only report warnings and critical issues
+          severity-threshold: warning
+          
+          # Only fail on critical issues
+          fail-on: critical
+          
+          # GitHub token for annotations
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      
+      # Upload results as artifact
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: liquibase-linter-results
+          path: liquibase-linter-results.json
+          retention-days: 30
+      
+      # Post summary to job
+      - name: Summary
+        if: always()
+        run: |
+          echo "### Liquibase Linter Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Violations Found**: ${{ steps.linter.outputs.violations-found }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Total**: ${{ steps.linter.outputs.total-violations }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Critical**: ${{ steps.linter.outputs.critical-count }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Warning**: ${{ steps.linter.outputs.warning-count }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Info**: ${{ steps.linter.outputs.info-count }}" >> $GITHUB_STEP_SUMMARY

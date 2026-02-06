@@ -1,0 +1,75 @@
+name: 'Liquibase Linter'
+description: 'Run liquibase-linter on your Liquibase changelogs and annotate PRs with violations'
+author: 'n2jsoft'
+
+branding:
+  icon: 'shield'
+  color: 'blue'
+
+inputs:
+  version:
+    description: 'Version of liquibase-linter to use (e.g., v0.0.1)'
+    required: false
+    default: 'v0.0.1'
+  
+  directory:
+    description: 'Directory containing Liquibase changelogs to check'
+    required: false
+    default: 'db/changelog'
+  
+  config-file:
+    description: 'Path to liquibase-linter configuration file (default: auto-discovery)'
+    required: false
+    default: ''
+  
+  rules:
+    description: 'Comma-separated list of rules to enable (leave empty to use config file or defaults)'
+    required: false
+    default: ''
+  
+  severity-threshold:
+    description: 'Minimum severity level to report (info, warning, critical)'
+    required: false
+    default: 'info'
+  
+  fail-on:
+    description: 'Severity level that causes the action to fail (info, warning, critical, never)'
+    required: false
+    default: 'critical'
+  
+  github-token:
+    description: 'GitHub token for creating PR annotations (usually secrets.GITHUB_TOKEN)'
+    required: true
+  
+  annotate:
+    description: 'Whether to create PR annotations (true/false)'
+    required: false
+    default: 'true'
+  
+  working-directory:
+    description: 'Working directory to run the action in'
+    required: false
+    default: '.'
+
+outputs:
+  violations-found:
+    description: 'Whether any violations were found (true/false)'
+  
+  total-violations:
+    description: 'Total number of violations found'
+  
+  critical-count:
+    description: 'Number of critical violations'
+  
+  warning-count:
+    description: 'Number of warning violations'
+  
+  info-count:
+    description: 'Number of info violations'
+  
+  result-file:
+    description: 'Path to the JSON results file'
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'

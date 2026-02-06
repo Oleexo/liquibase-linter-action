@@ -1,0 +1,27 @@
+name: Basic Liquibase Linting
+
+# Run on pull requests that modify changelog files
+on:
+  pull_request:
+    paths:
+      - 'db/changelog/**'
+
+# Required permissions for creating annotations
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      # Run liquibase-linter with default settings
+      - name: Run Liquibase Linter
+        uses: n2jsoft-public-org/liquibase-linter-action@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}

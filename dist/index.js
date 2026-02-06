@@ -633,10 +633,10 @@ async function runLinter(config) {
         const args = ['check'];
         // Add optional flags
         if (config.configFile) {
-            args.push('--config', config.configFile);
+            args.push(`--config=${config.configFile}`);
         }
         if (config.severityThreshold) {
-            args.push('--severity-threshold', config.severityThreshold);
+            args.push(`--severity-threshold=${config.severityThreshold}`);
         }
         // Always use JSON format for parsing
         args.push('--format=json');

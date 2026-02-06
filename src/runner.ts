@@ -16,11 +16,11 @@ export async function runLinter(config: LinterConfig): Promise<LinterResults> {
 
     // Add optional flags
     if (config.configFile) {
-      args.push('--config', config.configFile)
+      args.push(`--config=${config.configFile}`)
     }
 
     if (config.severityThreshold) {
-      args.push('--severity-threshold', config.severityThreshold)
+      args.push(`--severity-threshold=${config.severityThreshold}`)
     }
 
     // Always use JSON format for parsing

@@ -1,9 +1,9 @@
-import * as fs from 'node:fs/promises'
-import * as path from 'node:path'
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import * as tc from '@actions/tool-cache'
 import type { Octokit } from '@octokit/action'
+import * as fs from 'node:fs/promises'
+import * as path from 'node:path'
 import type { Context } from './github.js'
 
 type Inputs = {
@@ -18,8 +18,9 @@ type LinterViolation = {
   severity: 'critical' | 'warning' | 'info'
   message: string
   line: number
-  file: string
+  file_path: string
   changeset_id?: string
+  author?: string
 }
 
 type LinterOutput = {
@@ -221,8 +222,11 @@ const buildAnnotations = (result: LinterOutput) => {
 
     const title = `${violation.rule}${violation.changeset_id ? ` (changeset: ${violation.changeset_id})` : ''}`
 
+    // Convert absolute path to relative path for GitHub annotations
+    const relativePath = convertToRelativePath(violation.file_path)
+
     annotations.push({
-      path: violation.file,
+      path: relativePath,
       start_line: violation.line || 1,
       end_line: violation.line || 1,
       annotation_level: level,
@@ -232,6 +236,31 @@ const buildAnnotations = (result: LinterOutput) => {
   }
 
   return annotations
+}
+
+const convertToRelativePath = (absolutePath: string): string => {
+  // Get the workspace path from environment or use current directory
+  const workspace = process.env['GITHUB_WORKSPACE'] || process.cwd()
+
+  // If the path is already relative, return it
+  if (!path.isAbsolute(absolutePath)) {
+    return absolutePath
+  }
+
+  // Convert absolute path to relative
+  const relativePath = path.relative(workspace, absolutePath)
+
+  // If the relative path starts with .. or is outside workspace, try to extract just the relevant part
+  if (relativePath.startsWith('..')) {
+    // Try to find the first occurrence of a common directory like test_fixtures or db
+    const parts = absolutePath.split(path.sep)
+    const relevantIndex = parts.findIndex(p => ['test_fixtures', 'db', 'src', 'changelog'].includes(p))
+    if (relevantIndex !== -1) {
+      return parts.slice(relevantIndex).join('/')
+    }
+  }
+
+  return relativePath
 }
 
 const getConclusion = (result: LinterOutput, failOnCritical: boolean): 'success' | 'failure' | 'neutral' => {

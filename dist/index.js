@@ -669,12 +669,6 @@ async function runLinter(config) {
         if (stderr) {
             core.info(`Linter stderr: ${stderr}`);
         }
-        // Log exit code and stdout for debugging
-        core.info(`Linter exit code: ${exitCode}`);
-        core.info(`Linter stdout length: ${stdout.length}`);
-        if (stdout.length > 0 && stdout.length < 10000) {
-            core.info(`Linter stdout: ${stdout}`);
-        }
         // Handle exit codes
         if (exitCode === 2) {
             throw new Error(`Liquibase-linter execution error: ${stderr || 'Unknown error'}`);

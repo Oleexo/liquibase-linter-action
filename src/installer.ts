@@ -123,7 +123,7 @@ export async function installLinter(version: string): Promise<string> {
         // The binary may not support these flags in early versions
         core.warning(
           `Binary verification skipped: unable to verify with --version or --help. ` +
-          `The binary will be used as-is. Original error: ${error instanceof Error ? error.message : String(error)}`
+            `The binary will be used as-is. Original error: ${error instanceof Error ? error.message : String(error)}`
         )
       }
     }

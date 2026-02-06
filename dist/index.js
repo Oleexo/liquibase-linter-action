@@ -639,7 +639,7 @@ async function runLinter(config) {
             args.push('--severity-threshold', config.severityThreshold);
         }
         // Always use JSON format for parsing
-        args.push('--format', 'json');
+        args.push('--format=json');
         core.info(`Command: ${config.binaryPath} ${args.join(' ')}`);
         core.info(`Working directory: ${config.workingDirectory}`);
         // Execute the linter

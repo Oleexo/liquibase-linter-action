@@ -24,7 +24,7 @@ export async function runLinter(config: LinterConfig): Promise<LinterResults> {
     }
 
     // Always use JSON format for parsing
-    args.push('--format', 'json')
+    args.push('--format=json')
 
     core.info(`Command: ${config.binaryPath} ${args.join(' ')}`)
     core.info(`Working directory: ${config.workingDirectory}`)

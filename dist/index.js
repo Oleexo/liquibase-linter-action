@@ -630,7 +630,7 @@ async function runLinter(config) {
     try {
         core.info('Running liquibase-linter...');
         // Build command arguments
-        const args = ['check', config.directory];
+        const args = ['check'];
         // Add optional flags
         if (config.configFile) {
             args.push('--config', config.configFile);
@@ -640,6 +640,7 @@ async function runLinter(config) {
         }
         // Always use JSON format for parsing
         args.push('--format=json');
+        args.push(config.directory);
         core.info(`Command: ${config.binaryPath} ${args.join(' ')}`);
         core.info(`Working directory: ${config.workingDirectory}`);
         // Execute the linter

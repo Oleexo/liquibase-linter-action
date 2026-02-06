@@ -225,6 +225,11 @@ const buildAnnotations = (result: LinterOutput) => {
     // Convert absolute path to relative path for GitHub annotations
     const relativePath = convertToRelativePath(violation.file_path)
 
+    // Skip violations without a valid file path
+    if (!relativePath) {
+      continue
+    }
+
     annotations.push({
       path: relativePath,
       start_line: violation.line || 1,
@@ -238,7 +243,12 @@ const buildAnnotations = (result: LinterOutput) => {
   return annotations
 }
 
-const convertToRelativePath = (absolutePath: string): string => {
+const convertToRelativePath = (absolutePath: string | undefined): string => {
+  // Handle undefined or empty paths
+  if (!absolutePath) {
+    return ''
+  }
+
   // Get the workspace path from environment or use current directory
   const workspace = process.env['GITHUB_WORKSPACE'] || process.cwd()
 

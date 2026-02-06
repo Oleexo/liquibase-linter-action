@@ -1,9 +1,9 @@
+import * as fs from 'node:fs/promises'
+import * as path from 'node:path'
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import * as tc from '@actions/tool-cache'
 import type { Octokit } from '@octokit/action'
-import * as fs from 'node:fs/promises'
-import * as path from 'node:path'
 import type { Context } from './github.js'
 
 type Inputs = {

@@ -18,6 +18,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Create test changelog with violations
+        shell: bash
         run: |
           mkdir -p test/fixtures/with-violations
           cat > test/fixtures/with-violations/changelog.xml << 'EOF'
@@ -54,6 +55,7 @@ jobs:
           EOF
 
       - name: Create test changelog without violations
+        shell: bash
         run: |
           mkdir -p test/fixtures/no-violations
           cat > test/fixtures/no-violations/changelog.xml << 'EOF'

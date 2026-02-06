@@ -149,22 +149,6 @@ A check run summary is also created showing:
 - Total violations
 - Breakdown by severity (critical, warning, info)
 
-## Suppressing Violations
-
-You can suppress specific rules for individual changesets using inline comments:
-
-```xml
-<changeSet id="1" author="john">
-  <comment>liquibase-linter:disable sql-injection</comment>
-  <sql>
-    -- Known safe parameter from validated config
-    INSERT INTO settings VALUES (${config_value});
-  </sql>
-</changeSet>
-```
-
-See [suppression documentation](https://github.com/n2jsoft-public-org/liquibase-linter/blob/main/docs/suppression.md) for more details.
-
 ## Development
 
 ### Setup

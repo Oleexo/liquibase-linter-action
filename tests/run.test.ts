@@ -51,11 +51,14 @@ describe('run', () => {
     // Mock linter execution with no violations
     vi.mocked(exec.exec).mockImplementation(async (_commandLine, _args, options) => {
       const output = JSON.stringify({
-        version: '1.0.0',
-        timestamp: '2024-02-04T10:30:00Z',
-        files: [],
-        summary: {
+        violations: [],
+        metadata: {
+          linter_version: '1.0.0',
+          timestamp: '2024-02-04T10:30:00Z',
           files_checked: 5,
+          total_time_ms: 100,
+        },
+        summary: {
           total_violations: 0,
           critical: 0,
           warning: 0,
@@ -93,30 +96,30 @@ describe('run', () => {
     // Mock linter execution with violations
     vi.mocked(exec.exec).mockImplementation(async (_commandLine, _args, options) => {
       const output = JSON.stringify({
-        version: '1.0.0',
-        timestamp: '2024-02-04T10:30:00Z',
-        files: [
+        violations: [
           {
-            path: 'db/changelog/001.xml',
-            violations: [
-              {
-                rule: 'sql-injection',
-                severity: 'critical',
-                message: 'Potential SQL injection detected',
-                line: 15,
-                changeset_id: 'create-user-1',
-              },
-              {
-                rule: 'missing-rollback',
-                severity: 'warning',
-                message: 'Changeset does not include rollback',
-                line: 10,
-              },
-            ],
+            rule: 'sql-injection',
+            severity: 'critical',
+            message: 'Potential SQL injection detected',
+            line: 15,
+            file: 'db/changelog/001.xml',
+            changeset_id: 'create-user-1',
+          },
+          {
+            rule: 'missing-rollback',
+            severity: 'warning',
+            message: 'Changeset does not include rollback',
+            line: 10,
+            file: 'db/changelog/001.xml',
           },
         ],
-        summary: {
+        metadata: {
+          linter_version: '1.0.0',
+          timestamp: '2024-02-04T10:30:00Z',
           files_checked: 1,
+          total_time_ms: 150,
+        },
+        summary: {
           total_violations: 2,
           critical: 1,
           warning: 1,
@@ -167,23 +170,22 @@ describe('run', () => {
   it('should fail on critical violations when failOnCritical is true', async () => {
     vi.mocked(exec.exec).mockImplementation(async (_commandLine, _args, options) => {
       const output = JSON.stringify({
-        version: '1.0.0',
-        timestamp: '2024-02-04T10:30:00Z',
-        files: [
+        violations: [
           {
-            path: 'db/changelog/001.xml',
-            violations: [
-              {
-                rule: 'sql-injection',
-                severity: 'critical',
-                message: 'SQL injection detected',
-                line: 15,
-              },
-            ],
+            rule: 'sql-injection',
+            severity: 'critical',
+            message: 'SQL injection detected',
+            line: 15,
+            file: 'db/changelog/001.xml',
           },
         ],
-        summary: {
+        metadata: {
+          linter_version: '1.0.0',
+          timestamp: '2024-02-04T10:30:00Z',
           files_checked: 1,
+          total_time_ms: 120,
+        },
+        summary: {
           total_violations: 1,
           critical: 1,
           warning: 0,
@@ -216,23 +218,22 @@ describe('run', () => {
   it('should not fail on critical violations when failOnCritical is false', async () => {
     vi.mocked(exec.exec).mockImplementation(async (_commandLine, _args, options) => {
       const output = JSON.stringify({
-        version: '1.0.0',
-        timestamp: '2024-02-04T10:30:00Z',
-        files: [
+        violations: [
           {
-            path: 'db/changelog/001.xml',
-            violations: [
-              {
-                rule: 'sql-injection',
-                severity: 'critical',
-                message: 'SQL injection detected',
-                line: 15,
-              },
-            ],
+            rule: 'sql-injection',
+            severity: 'critical',
+            message: 'SQL injection detected',
+            line: 15,
+            file: 'db/changelog/001.xml',
           },
         ],
-        summary: {
+        metadata: {
+          linter_version: '1.0.0',
+          timestamp: '2024-02-04T10:30:00Z',
           files_checked: 1,
+          total_time_ms: 120,
+        },
+        summary: {
           total_violations: 1,
           critical: 1,
           warning: 0,
@@ -265,11 +266,14 @@ describe('run', () => {
   it('should include config parameter when provided', async () => {
     vi.mocked(exec.exec).mockImplementation(async (_commandLine, _args, options) => {
       const output = JSON.stringify({
-        version: '1.0.0',
-        timestamp: '2024-02-04T10:30:00Z',
-        files: [],
-        summary: {
+        violations: [],
+        metadata: {
+          linter_version: '1.0.0',
+          timestamp: '2024-02-04T10:30:00Z',
           files_checked: 0,
+          total_time_ms: 50,
+        },
+        summary: {
           total_violations: 0,
           critical: 0,
           warning: 0,
@@ -301,11 +305,14 @@ describe('run', () => {
   it('should download specific version when provided', async () => {
     vi.mocked(exec.exec).mockImplementation(async (_commandLine, _args, options) => {
       const output = JSON.stringify({
-        version: '1.0.0',
-        timestamp: '2024-02-04T10:30:00Z',
-        files: [],
-        summary: {
+        violations: [],
+        metadata: {
+          linter_version: '1.0.0',
+          timestamp: '2024-02-04T10:30:00Z',
           files_checked: 0,
+          total_time_ms: 50,
+        },
+        summary: {
           total_violations: 0,
           critical: 0,
           warning: 0,

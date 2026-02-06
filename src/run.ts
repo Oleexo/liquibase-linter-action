@@ -18,20 +18,19 @@ type LinterViolation = {
   severity: 'critical' | 'warning' | 'info'
   message: string
   line: number
+  file: string
   changeset_id?: string
 }
 
-type LinterFile = {
-  path: string
-  violations: LinterViolation[]
-}
-
 type LinterOutput = {
-  version: string
-  timestamp: string
-  files: LinterFile[]
-  summary: {
+  violations: LinterViolation[]
+  metadata: {
+    linter_version: string
+    timestamp: string
     files_checked: number
+    total_time_ms: number
+  }
+  summary: {
     total_violations: number
     critical: number
     warning: number
@@ -55,7 +54,7 @@ export const run = async (inputs: Inputs, octokit: Octokit, context: Context): P
 
   // Log summary
   core.info(`\n📊 Summary:`)
-  core.info(`  Files checked: ${result.summary.files_checked}`)
+  core.info(`  Files checked: ${result.metadata.files_checked}`)
   core.info(`  Total violations: ${result.summary.total_violations}`)
   core.info(`  🔴 Critical: ${result.summary.critical}`)
   core.info(`  ⚠️  Warning: ${result.summary.warning}`)
@@ -121,11 +120,14 @@ const executeLinter = async (linterPath: string, targetPath: string, configPath:
   if (exitCode === 0 && !output.trim()) {
     // No violations - return empty result structure
     return JSON.stringify({
-      version: '1.0.0',
-      timestamp: new Date().toISOString(),
-      files: [],
-      summary: {
+      violations: [],
+      metadata: {
+        linter_version: '1.0.0',
+        timestamp: new Date().toISOString(),
         files_checked: 0,
+        total_time_ms: 0,
+      },
+      summary: {
         total_violations: 0,
         critical: 0,
         warning: 0,
@@ -213,22 +215,20 @@ const buildAnnotations = (result: LinterOutput) => {
     title: string
   }[] = []
 
-  for (const file of result.files) {
-    for (const violation of file.violations) {
-      const level =
-        violation.severity === 'critical' ? 'failure' : violation.severity === 'warning' ? 'warning' : 'notice'
+  for (const violation of result.violations) {
+    const level =
+      violation.severity === 'critical' ? 'failure' : violation.severity === 'warning' ? 'warning' : 'notice'
 
-      const title = `${violation.rule}${violation.changeset_id ? ` (changeset: ${violation.changeset_id})` : ''}`
+    const title = `${violation.rule}${violation.changeset_id ? ` (changeset: ${violation.changeset_id})` : ''}`
 
-      annotations.push({
-        path: file.path,
-        start_line: violation.line || 1,
-        end_line: violation.line || 1,
-        annotation_level: level,
-        message: violation.message,
-        title,
-      })
-    }
+    annotations.push({
+      path: violation.file,
+      start_line: violation.line || 1,
+      end_line: violation.line || 1,
+      annotation_level: level,
+      message: violation.message,
+      title,
+    })
   }
 
   return annotations
@@ -245,14 +245,14 @@ const getConclusion = (result: LinterOutput, failOnCritical: boolean): 'success'
 }
 
 const buildSummary = (result: LinterOutput): string => {
-  const { summary } = result
+  const { summary, metadata } = result
 
   if (summary.total_violations === 0) {
     return '✅ **No violations found!**\n\nAll Liquibase changelogs passed linting checks.'
   }
 
   let summaryText = '## Liquibase Linter Results\n\n'
-  summaryText += `**Files checked:** ${summary.files_checked}\n\n`
+  summaryText += `**Files checked:** ${metadata.files_checked}\n\n`
   summaryText += `**Total violations:** ${summary.total_violations}\n\n`
   summaryText += '### Violations by Severity\n\n'
   summaryText += `- 🔴 **Critical:** ${summary.critical}\n`

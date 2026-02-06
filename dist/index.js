@@ -636,7 +636,7 @@ async function runLinter(config) {
             args.push(`--config=${config.configFile}`);
         }
         if (config.severityThreshold) {
-            args.push(`--severity-threshold=${config.severityThreshold}`);
+            args.push(`--severity=${config.severityThreshold}`);
         }
         // Always use JSON format for parsing
         args.push('--format=json');

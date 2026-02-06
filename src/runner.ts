@@ -20,7 +20,7 @@ export async function runLinter(config: LinterConfig): Promise<LinterResults> {
     }
 
     if (config.severityThreshold) {
-      args.push(`--severity-threshold=${config.severityThreshold}`)
+      args.push(`--severity=${config.severityThreshold}`)
     }
 
     // Always use JSON format for parsing

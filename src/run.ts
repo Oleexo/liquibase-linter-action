@@ -1,0 +1,268 @@
+import * as core from '@actions/core'
+import * as exec from '@actions/exec'
+import * as tc from '@actions/tool-cache'
+import type { Octokit } from '@octokit/action'
+import * as fs from 'node:fs/promises'
+import * as path from 'node:path'
+import type { Context } from './github.js'
+
+type Inputs = {
+  path: string
+  config: string
+  version: string
+  failOnCritical: boolean
+}
+
+type LinterViolation = {
+  rule: string
+  severity: 'critical' | 'warning' | 'info'
+  message: string
+  line: number
+  changeset_id?: string
+}
+
+type LinterFile = {
+  path: string
+  violations: LinterViolation[]
+}
+
+type LinterOutput = {
+  version: string
+  timestamp: string
+  files: LinterFile[]
+  summary: {
+    files_checked: number
+    total_violations: number
+    critical: number
+    warning: number
+    info: number
+  }
+}
+
+export const run = async (inputs: Inputs, octokit: Octokit, context: Context): Promise<void> => {
+  core.info('🚀 Starting Liquibase Linter action...')
+
+  // Download liquibase-linter binary
+  const linterPath = await downloadLinter(inputs.version)
+  core.info(`✓ Downloaded liquibase-linter to ${linterPath}`)
+
+  // Execute linter
+  const output = await executeLinter(linterPath, inputs.path, inputs.config)
+  const result = parseLinterOutput(output)
+
+  // Create check run with annotations
+  await createCheckRun(octokit, context, result, inputs.failOnCritical)
+
+  // Log summary
+  core.info(`\n📊 Summary:`)
+  core.info(`  Files checked: ${result.summary.files_checked}`)
+  core.info(`  Total violations: ${result.summary.total_violations}`)
+  core.info(`  🔴 Critical: ${result.summary.critical}`)
+  core.info(`  ⚠️  Warning: ${result.summary.warning}`)
+  core.info(`  ℹ️  Info: ${result.summary.info}`)
+
+  // Fail if needed
+  if (inputs.failOnCritical && result.summary.critical > 0) {
+    core.setFailed(`Found ${result.summary.critical} critical violation(s)`)
+  }
+}
+
+const downloadLinter = async (version: string): Promise<string> => {
+  const platform = process.platform === 'darwin' ? 'darwin' : 'linux'
+  const arch = process.arch === 'arm64' ? 'arm64' : 'amd64'
+  const binaryName = `liquibase-linter-${platform}-${arch}`
+
+  let downloadUrl: string
+  if (version === 'latest') {
+    downloadUrl = `https://github.com/n2jsoft-public-org/liquibase-linter/releases/latest/download/${binaryName}`
+  } else {
+    downloadUrl = `https://github.com/n2jsoft-public-org/liquibase-linter/releases/download/${version}/${binaryName}`
+  }
+
+  core.info(`⬇️  Downloading from ${downloadUrl}`)
+
+  const downloadPath = await tc.downloadTool(downloadUrl)
+  const targetPath = path.join(path.dirname(downloadPath), 'liquibase-linter')
+
+  await fs.rename(downloadPath, targetPath)
+  await fs.chmod(targetPath, 0o755)
+
+  return targetPath
+}
+
+const executeLinter = async (linterPath: string, targetPath: string, configPath: string): Promise<string> => {
+  core.info(`🔍 Running linter on ${targetPath}...`)
+
+  const args = ['check', '--format=json', targetPath]
+  if (configPath) {
+    args.splice(1, 0, `--config=${configPath}`)
+  }
+
+  let output = ''
+  let errorOutput = ''
+
+  const exitCode = await exec.exec(linterPath, args, {
+    listeners: {
+      stdout: (data: Buffer) => {
+        output += data.toString()
+      },
+      stderr: (data: Buffer) => {
+        errorOutput += data.toString()
+      },
+    },
+    ignoreReturnCode: true,
+  })
+
+  // Exit codes: 0 = no violations, 1 = violations found, 2 = error
+  if (exitCode === 2) {
+    throw new Error(`Linter error: ${errorOutput || 'Unknown error'}`)
+  }
+
+  if (exitCode === 0 && !output.trim()) {
+    // No violations - return empty result structure
+    return JSON.stringify({
+      version: '1.0.0',
+      timestamp: new Date().toISOString(),
+      files: [],
+      summary: {
+        files_checked: 0,
+        total_violations: 0,
+        critical: 0,
+        warning: 0,
+        info: 0,
+      },
+    })
+  }
+
+  return output
+}
+
+const parseLinterOutput = (output: string): LinterOutput => {
+  try {
+    return JSON.parse(output) as LinterOutput
+  } catch (e) {
+    throw new Error(`Failed to parse linter output: ${e instanceof Error ? e.message : String(e)}`)
+  }
+}
+
+const createCheckRun = async (
+  octokit: Octokit,
+  context: Context,
+  result: LinterOutput,
+  failOnCritical: boolean,
+): Promise<void> => {
+  const annotations = buildAnnotations(result)
+  const conclusion = getConclusion(result, failOnCritical)
+  const summary = buildSummary(result)
+
+  core.info(`📝 Creating check run with ${annotations.length} annotation(s)...`)
+
+  // GitHub API limits annotations to 50 per request
+  const MAX_ANNOTATIONS = 50
+
+  for (let i = 0; i < annotations.length; i += MAX_ANNOTATIONS) {
+    const batch = annotations.slice(i, i + MAX_ANNOTATIONS)
+
+    await octokit.rest.checks.create({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      name: 'Liquibase Linter',
+      head_sha: context.sha,
+      status: 'completed',
+      conclusion,
+      output: {
+        title: 'Liquibase Linter Results',
+        summary,
+        annotations: batch,
+      },
+    })
+
+    // If there are more annotations, we need to update the check run
+    // For simplicity, we create separate check runs for batches
+    if (i + MAX_ANNOTATIONS < annotations.length) {
+      core.info(`  Batch ${Math.floor(i / MAX_ANNOTATIONS) + 1} complete...`)
+    }
+  }
+
+  // If no annotations, still create a check run
+  if (annotations.length === 0) {
+    await octokit.rest.checks.create({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      name: 'Liquibase Linter',
+      head_sha: context.sha,
+      status: 'completed',
+      conclusion,
+      output: {
+        title: 'Liquibase Linter Results',
+        summary,
+      },
+    })
+  }
+
+  core.info('✓ Check run created')
+}
+
+const buildAnnotations = (result: LinterOutput) => {
+  const annotations: {
+    path: string
+    start_line: number
+    end_line: number
+    annotation_level: 'failure' | 'warning' | 'notice'
+    message: string
+    title: string
+  }[] = []
+
+  for (const file of result.files) {
+    for (const violation of file.violations) {
+      const level =
+        violation.severity === 'critical' ? 'failure' : violation.severity === 'warning' ? 'warning' : 'notice'
+
+      const title = `${violation.rule}${violation.changeset_id ? ` (changeset: ${violation.changeset_id})` : ''}`
+
+      annotations.push({
+        path: file.path,
+        start_line: violation.line || 1,
+        end_line: violation.line || 1,
+        annotation_level: level,
+        message: violation.message,
+        title,
+      })
+    }
+  }
+
+  return annotations
+}
+
+const getConclusion = (result: LinterOutput, failOnCritical: boolean): 'success' | 'failure' | 'neutral' => {
+  if (result.summary.critical > 0 && failOnCritical) {
+    return 'failure'
+  }
+  if (result.summary.total_violations > 0) {
+    return 'neutral'
+  }
+  return 'success'
+}
+
+const buildSummary = (result: LinterOutput): string => {
+  const { summary } = result
+
+  if (summary.total_violations === 0) {
+    return '✅ **No violations found!**\n\nAll Liquibase changelogs passed linting checks.'
+  }
+
+  let summaryText = '## Liquibase Linter Results\n\n'
+  summaryText += `**Files checked:** ${summary.files_checked}\n\n`
+  summaryText += `**Total violations:** ${summary.total_violations}\n\n`
+  summaryText += '### Violations by Severity\n\n'
+  summaryText += `- 🔴 **Critical:** ${summary.critical}\n`
+  summaryText += `- ⚠️  **Warning:** ${summary.warning}\n`
+  summaryText += `- ℹ️  **Info:** ${summary.info}\n\n`
+
+  if (summary.critical > 0) {
+    summaryText += '---\n\n'
+    summaryText += '⚠️  **Critical violations found!** These should be addressed immediately.\n'
+  }
+
+  return summaryText
+}

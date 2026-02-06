@@ -1,0 +1,27 @@
+name: liquibase-linter-action
+description: Run liquibase-linter on your Liquibase changelogs and create inline annotations for violations
+
+inputs:
+  path:
+    description: Directory or file to check (defaults to repository root)
+    required: false
+    default: '.'
+  config:
+    description: Path to .liquibase-linter.yaml config file (optional)
+    required: false
+  version:
+    description: Version of liquibase-linter to use
+    required: false
+    default: 'latest'
+  fail-on-critical:
+    description: Whether to fail the action on critical violations
+    required: false
+    default: 'true'
+  token:
+    description: GitHub token for creating check runs
+    required: true
+    default: ${{ github.token }}
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'

@@ -33,10 +33,11 @@ jobs:
         run: npm run build
 
       - name: Compare dist/
+        shell: bash
         run: |
-          if [ "$(git diff --ignore-space-at-eol dist/ | wc -l)" -gt "0" ]; then
+          if ! git diff --quiet --ignore-space-at-eol dist/; then
             echo "Detected uncommitted changes after build. See status below:"
-            git diff
+            git diff --ignore-space-at-eol dist/
             exit 1
           fi
         id: diff
@@ -80,6 +81,7 @@ jobs:
         continue-on-error: true
 
       - name: Verify no violations
+        shell: bash
         run: |
           if [ "${{ steps.test-no-violations.outputs.violations-found }}" != "false" ]; then
             echo "Expected no violations but found some"

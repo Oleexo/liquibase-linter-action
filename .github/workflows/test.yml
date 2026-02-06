@@ -82,7 +82,6 @@ jobs:
         id: test-violations
         uses: ./
         with:
-          version: v0.0.1
           directory: test/fixtures/with-violations
           github-token: ${{ secrets.GITHUB_TOKEN }}
           fail-on: never
@@ -100,7 +99,6 @@ jobs:
         id: test-no-violations
         uses: ./
         with:
-          version: v0.0.1
           directory: test/fixtures/no-violations
           github-token: ${{ secrets.GITHUB_TOKEN }}
           fail-on: critical

@@ -66,7 +66,7 @@ jobs:
       - name: Run Liquibase Linter
         uses: n2jsoft-public-org/liquibase-linter-action@v1
         with:
-          version: v0.0.1
+          version: v0.0.2
           directory: db/changelog
           config-file: .liquibase-linter.yaml
           severity-threshold: warning
@@ -116,7 +116,7 @@ jobs:
 
 | Input                | Description                                                           | Required | Default            |
 | -------------------- | --------------------------------------------------------------------- | -------- | ------------------ |
-| `version`            | Version of liquibase-linter to use                                    | No       | `v0.0.1`           |
+| `version`            | Version of liquibase-linter to use                                    | No       | `v0.0.2`           |
 | `directory`          | Directory containing Liquibase changelogs                             | No       | `db/changelog`     |
 | `config-file`        | Path to configuration file                                            | No       | _(auto-discovery)_ |
 | `rules`              | Comma-separated list of rules to enable                               | No       | _(from config)_    |

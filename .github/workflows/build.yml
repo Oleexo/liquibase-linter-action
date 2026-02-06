@@ -74,7 +74,6 @@ jobs:
         id: test-no-violations
         uses: ./
         with:
-          version: v0.0.1
           directory: test/fixtures/no-violations
           github-token: ${{ secrets.GITHUB_TOKEN }}
           annotate: 'false'

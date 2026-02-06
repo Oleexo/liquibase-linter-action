@@ -11,7 +11,7 @@ import { LinterConfig, SeverityLevel } from './types'
 async function run(): Promise<void> {
   try {
     // Get inputs
-    const version = core.getInput('version', { required: false }) || 'v0.0.1'
+    const version = core.getInput('version', { required: false }) || 'v0.0.2'
     const directory = core.getInput('directory', { required: false }) || 'db/changelog'
     const configFile = core.getInput('config-file', { required: false })
     const rules = core.getInput('rules', { required: false })

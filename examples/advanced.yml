@@ -28,7 +28,7 @@ jobs:
         uses: n2jsoft-public-org/liquibase-linter-action@v1
         with:
           # Use specific version
-          version: v0.0.1
+          version: v0.0.2
           
           # Custom directory path
           directory: database/migrations

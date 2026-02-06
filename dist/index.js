@@ -449,7 +449,7 @@ const runner_1 = __nccwpck_require__(1924);
 async function run() {
     try {
         // Get inputs
-        const version = core.getInput('version', { required: false }) || 'v0.0.1';
+        const version = core.getInput('version', { required: false }) || 'v0.0.2';
         const directory = core.getInput('directory', { required: false }) || 'db/changelog';
         const configFile = core.getInput('config-file', { required: false });
         const rules = core.getInput('rules', { required: false });

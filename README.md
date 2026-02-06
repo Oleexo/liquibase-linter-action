@@ -2,6 +2,8 @@
 
 A GitHub Action that runs [liquibase-linter](https://github.com/n2jsoft-public-org/liquibase-linter) on your Liquibase changelogs and creates inline annotations on pull requests for any violations found.
 
+> **Version 2.0** - Now with automated releases, modern tooling (pnpm, Biome, Vitest), and improved testability!
+
 ## Features
 
 - 🔍 **Automated Security Scanning** - Detects SQL injection, hardcoded credentials, and dangerous operations
@@ -35,7 +37,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Run Liquibase Linter
-        uses: n2jsoft-public-org/liquibase-linter-action@v1
+        uses: n2jsoft-public-org/liquibase-linter-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -106,7 +108,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Lint ${{ matrix.directory }}
-        uses: n2jsoft-public-org/liquibase-linter-action@v1
+        uses: n2jsoft-public-org/liquibase-linter-action@v2
         with:
           directory: ${{ matrix.directory }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -142,7 +144,7 @@ jobs:
 ```yaml
 - name: Run Liquibase Linter
   id: linter
-  uses: n2jsoft-public-org/liquibase-linter-action@v1
+  uses: n2jsoft-public-org/liquibase-linter-action@v2
   with:
     github-token: ${{ secrets.GITHUB_TOKEN }}
     fail-on: never
@@ -268,7 +270,7 @@ permissions:
 Ensure the directory path is relative to your working directory:
 
 ```yaml
-- uses: n2jsoft-public-org/liquibase-linter-action@v1
+- uses: n2jsoft-public-org/liquibase-linter-action@v2
   with:
     directory: db/changelog  # Not /db/changelog
 ```
@@ -302,14 +304,41 @@ permissions:
 
 ## Development
 
-### Building
+### Prerequisites
+
+- Node.js 20 or later
+- pnpm 8 or later
+
+### Setup
 
 ```bash
-npm install
-npm run build
-```
+# Clone the repository
+git clone https://github.com/n2jsoft-public-org/liquibase-linter-action.git
+cd liquibase-linter-action
 
-### Testing Locally
+# Install pnpm if needed
+npm install -g pnpm
+
+# Install dependencies
+pnpm install
+
+# Build the action
+pnpm build
+
+# Run tests
+pnpm test
+
+# Format and lint
+pnpm check
+```pnpm all` to build, format, lint, and test
+6. Submit a pull request (dist/ will be auto-generated on merge)
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+
+## Version History
+
+- **v2.0** (February 2026) - Modernized with automated releases, pnpm, Biome, Vitest, and ESM
+- **v1.0** - Initial release with manual dist/ tracking
 
 ```bash
 # Set required environment variables
@@ -319,6 +348,20 @@ export INPUT_DIRECTORY=db/changelog
 # Run the action
 node dist/index.js
 ```
+
+### Architecture
+
+**Version 2.0** uses modern development tooling:
+- **pnpm** - Fast, efficient package manager
+- **Biome** - Single tool for formatting and linting (replaces ESLint + Prettier)
+- **Vitest** - Fast, modern testing framework
+- **ESM** - ES Modules for better tree-shaking
+- **Automated releases** - Releases are generated automatically on main branch merges
+
+The action follows the [int128/typescript-action](https://github.com/int128/typescript-action) template with:
+- Automated versioning and release tagging
+- Auto-generated dist/ files (not tracked in git)
+- Automated code formatting via bot commits
 
 ## Contributing
 

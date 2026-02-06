@@ -3,6 +3,7 @@ node_modules/
 
 # Build outputs
 lib/
+dist/
 *.log
 
 # IDE
@@ -22,6 +23,3 @@ coverage/
 # Temporary files
 *.tmp
 .env
-
-# Keep dist/ for GitHub Actions
-# dist/ is intentionally tracked for the action to work

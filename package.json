@@ -1,17 +1,14 @@
 {
     "name": "liquibase-linter-action",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "description": "GitHub Action for running liquibase-linter on Liquibase changelogs",
+    "type": "module",
     "main": "dist/index.js",
     "scripts": {
-        "build": "tsc && ncc build lib/main.js --source-map --license licenses.txt",
-        "format": "prettier --write '**/*.ts'",
-        "format-check": "prettier --check '**/*.ts'",
-        "lint": "eslint src/**/*.ts",
-        "package": "ncc build lib/main.js --source-map --license licenses.txt",
-        "test": "jest",
-        "all": "npm run build && npm run format && npm run lint && npm run package",
-        "prod": "npm run lint && npm run format && npm run build"
+        "build": "ncc build src/index.ts -o dist --minify --license LICENSE",
+        "check": "biome check --write",
+        "test": "vitest",
+        "all": "pnpm check && pnpm build && pnpm test"
     },
     "repository": {
         "type": "git",
@@ -31,19 +28,17 @@
         "@actions/exec": "^1.1.1",
         "@actions/github": "^6.0.0",
         "@actions/http-client": "^2.2.0",
-        "@actions/tool-cache": "^2.0.1"
+        "@actions/tool-cache": "^2.0.1",
+        "@octokit/action": "^7.0.0",
+        "@octokit/plugin-retry": "^7.0.0"
     },
     "devDependencies": {
+        "@biomejs/biome": "^1.9.4",
+        "@tsconfig/node20": "^20.1.4",
+        "@tsconfig/strictest": "^2.0.5",
         "@types/node": "^20.11.0",
-        "@typescript-eslint/eslint-plugin": "^6.19.0",
-        "@typescript-eslint/parser": "^6.19.0",
         "@vercel/ncc": "^0.38.1",
-        "eslint": "^8.56.0",
-        "eslint-plugin-github": "^4.10.1",
-        "eslint-plugin-jest": "^27.6.3",
-        "jest": "^29.7.0",
-        "prettier": "^3.2.4",
-        "ts-jest": "^29.1.2",
-        "typescript": "^5.3.3"
+        "typescript": "^5.3.3",
+        "vitest": "^2.1.8"
     }
 }

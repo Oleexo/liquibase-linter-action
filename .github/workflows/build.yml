@@ -14,40 +14,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version-file: .node-version
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
-      - name: Check formatting
-        run: npm run format-check
-
-      - name: Lint
-        run: npm run lint
+      - name: Check formatting and linting
+        run: pnpm check
 
       - name: Build
-        run: npm run build
+        run: pnpm build
 
-      - name: Compare dist/
-        shell: bash
-        run: |
-          if ! git diff --quiet --ignore-space-at-eol dist/; then
-            echo "Detected uncommitted changes after build. See status below:"
-            git diff --ignore-space-at-eol dist/
-            exit 1
-          fi
-        id: diff
-
-      - name: Upload dist
-        if: failure() && steps.diff.conclusion == 'failure'
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist
-          path: dist/
+      - name: Test
+        run: pnpm test
 
   test:
     runs-on: ${{ matrix.os }}

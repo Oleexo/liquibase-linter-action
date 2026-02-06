@@ -40,6 +40,7 @@ inputs:
   github-token:
     description: 'GitHub token for creating PR annotations (usually secrets.GITHUB_TOKEN)'
     required: true
+    default: ${{ github.token }}
   
   annotate:
     description: 'Whether to create PR annotations (true/false)'

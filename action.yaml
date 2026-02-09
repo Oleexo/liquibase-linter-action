@@ -12,7 +12,7 @@ inputs:
   version:
     description: Version of liquibase-linter to use
     required: false
-    default: 'v0.0.2'
+    default: 'v0.0.3'
   fail-on-critical:
     description: Whether to fail the action on critical violations
     required: false

@@ -1,9 +1,9 @@
-import * as fs from 'node:fs/promises'
-import * as path from 'node:path'
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import * as tc from '@actions/tool-cache'
 import type { Octokit } from '@octokit/action'
+import * as fs from 'node:fs/promises'
+import * as path from 'node:path'
 import { type Context, getPullRequestNumber } from './github.js'
 
 type Inputs = {
@@ -258,7 +258,7 @@ const convertToRelativePath = (absolutePath: string | undefined): string => {
   }
 
   // Get the workspace path from environment or use current directory
-  const workspace = process.env.GITHUB_WORKSPACE || process.cwd()
+  const workspace = process.env['GITHUB_WORKSPACE'] || process.cwd()
 
   // If the path is already relative, return it
   if (!path.isAbsolute(absolutePath)) {

@@ -6,7 +6,8 @@ A GitHub Action that runs [liquibase-linter](https://github.com/n2jsoft-public-o
 
 - 🔒 **Security First**: Detects SQL injection risks, hardcoded credentials, and dangerous operations
 - ✨ **Inline Annotations**: Violations appear directly on pull request file diffs at the exact line
-- 📊 **Rich Check Reports**: Detailed summary with violation counts by severity
+- � **PR Comments**: Summary comment in pull request conversation (updated on each run)
+- �📊 **Rich Check Reports**: Detailed summary with violation counts by severity
 - ⚡ **Fast**: Built on Go-based liquibase-linter for optimal performance
 - 🔧 **Configurable**: Supports custom configuration files and rule settings
 - 🎯 **Smart Failing**: Optionally fail workflows only on critical violations
@@ -34,6 +35,7 @@ jobs:
     permissions:
       contents: read
       checks: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
       
@@ -57,6 +59,7 @@ jobs:
     permissions:
       contents: read
       checks: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
       
@@ -85,9 +88,12 @@ This action requires the following permissions:
 
 ```yaml
 permissions:
-  contents: read   # To checkout code
-  checks: write    # To create check runs with annotations
+  contents: read        # To checkout code
+  checks: write         # To create check runs with annotations
+  pull-requests: write  # To post/update PR comments
 ```
+
+**Note**: The `pull-requests: write` permission is required for posting summary comments to pull requests. If you only want check run annotations, you can omit this permission (the action will skip PR comments gracefully).
 
 ## Configuration
 
@@ -144,7 +150,18 @@ Line 10: Changeset does not include a rollback script
 Add a <rollback> block to enable safe rollback of this change.
 ```
 
-A check run summary is also created showing:
+**Pull Request Comment**: A summary comment is posted to the PR conversation showing violation counts by severity:
+
+| Severity   | Count |
+| ---------- | ----- |
+| 🔴 Critical | **2** |
+| ⚠️  Warning | **5** |
+| ℹ️  Info    | **1** |
+| **Total**  | **8** |
+
+The comment is automatically updated on subsequent runs (no duplicate comments).
+
+**Check Run Summary**: A detailed check run is also created showing:
 - Files checked
 - Total violations
 - Breakdown by severity (critical, warning, info)

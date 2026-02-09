@@ -1,10 +1,10 @@
-import * as fs from 'node:fs/promises'
-import * as path from 'node:path'
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import * as tc from '@actions/tool-cache'
 import type { Octokit } from '@octokit/action'
-import type { Context } from './github.js'
+import * as fs from 'node:fs/promises'
+import * as path from 'node:path'
+import { type Context, getPullRequestNumber } from './github.js'
 
 type Inputs = {
   path: string
@@ -52,6 +52,14 @@ export const run = async (inputs: Inputs, octokit: Octokit, context: Context): P
 
   // Create check run with annotations
   await createCheckRun(octokit, context, result, inputs.failOnCritical)
+
+  // Post or update PR comment
+  const prNumber = getPullRequestNumber(context)
+  if (prNumber) {
+    await upsertPRComment(octokit, context, prNumber, result)
+  } else {
+    core.info('ℹ️  Skipping PR comment (not running in pull request context)')
+  }
 
   // Log summary
   core.info(`\n📊 Summary:`)
@@ -250,7 +258,7 @@ const convertToRelativePath = (absolutePath: string | undefined): string => {
   }
 
   // Get the workspace path from environment or use current directory
-  const workspace = process.env['GITHUB_WORKSPACE'] || process.cwd()
+  const workspace = process.env.GITHUB_WORKSPACE || process.cwd()
 
   // If the path is already relative, return it
   if (!path.isAbsolute(absolutePath)) {
@@ -304,4 +312,76 @@ const buildSummary = (result: LinterOutput): string => {
   }
 
   return summaryText
+}
+
+const buildPRCommentBody = (result: LinterOutput): string => {
+  const { summary, metadata } = result
+  const timestamp = new Date().toISOString()
+
+  let body = '<!-- liquibase-linter-action-comment -->\n'
+  body += '## 🔍 Liquibase Linter Results\n\n'
+
+  if (summary.total_violations === 0) {
+    body += '✅ **No violations found!**\n\n'
+    body += 'All Liquibase changelogs passed linting checks.\n\n'
+  } else {
+    body += '| Severity | Count |\n'
+    body += '|----------|-------|\n'
+    body += `| 🔴 Critical | **${summary.critical}** |\n`
+    body += `| ⚠️  Warning | **${summary.warning}** |\n`
+    body += `| ℹ️  Info | **${summary.info}** |\n`
+    body += `| **Total** | **${summary.total_violations}** |\n\n`
+
+    if (summary.critical > 0) {
+      body += '> ⚠️  **Critical violations found!** These should be addressed immediately.\n\n'
+    }
+  }
+
+  body += `**Files checked:** ${metadata.files_checked}\n\n`
+  body += `---\n`
+  body += `*Updated by [Liquibase Linter](https://github.com/n2jsoft-public-org/liquibase-linter-action) at ${timestamp}*`
+
+  return body
+}
+
+const findExistingComment = async (octokit: Octokit, context: Context, prNumber: number): Promise<number | null> => {
+  const { data: comments } = await octokit.rest.issues.listComments({
+    owner: context.repo.owner,
+    repo: context.repo.repo,
+    issue_number: prNumber,
+  })
+
+  const existingComment = comments.find((comment) => comment.body?.includes('<!-- liquibase-linter-action-comment -->'))
+
+  return existingComment ? existingComment.id : null
+}
+
+const upsertPRComment = async (
+  octokit: Octokit,
+  context: Context,
+  prNumber: number,
+  result: LinterOutput,
+): Promise<void> => {
+  const body = buildPRCommentBody(result)
+  const existingCommentId = await findExistingComment(octokit, context, prNumber)
+
+  if (existingCommentId) {
+    core.info(`💬 Updating existing PR comment...`)
+    await octokit.rest.issues.updateComment({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      comment_id: existingCommentId,
+      body,
+    })
+    core.info('✓ PR comment updated')
+  } else {
+    core.info(`💬 Creating new PR comment...`)
+    await octokit.rest.issues.createComment({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      issue_number: prNumber,
+      body,
+    })
+    core.info('✓ PR comment created')
+  }
 }

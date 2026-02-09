@@ -35,3 +35,11 @@ const getEnv = (name: string): string => {
   assert(process.env[name], `${name} is required`)
   return process.env[name]
 }
+
+export const getPullRequestNumber = (context: Context): number | null => {
+  // Type guard to check if payload is a pull_request event
+  if ('pull_request' in context.payload && context.payload.pull_request) {
+    return context.payload.pull_request.number
+  }
+  return null
+}

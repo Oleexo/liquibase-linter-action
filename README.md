@@ -74,13 +74,14 @@ jobs:
 
 ## Inputs
 
-| Name               | Required | Default               | Description                                                                                                               |
-| ------------------ | -------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `path`             | No       | `.`                   | Directory or file to check. Defaults to repository root.                                                                  |
-| `config`           | No       |                       | Path to `.liquibase-linter.yaml` configuration file (optional). If not specified, linter will auto-discover config files. |
-| `version`          | No       | `v0.0.2`              | Version of liquibase-linter to use (e.g., `v0.0.2` or `latest`).                                                          |
-| `fail-on-critical` | No       | `true`                | Whether to fail the workflow on critical violations. Set to `false` for annotation-only mode.                             |
-| `token`            | No       | `${{ github.token }}` | GitHub token for creating check runs. Automatically provided.                                                             |
+| Name                 | Required | Default               | Description                                                                                                               |
+| -------------------- | -------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `path`               | No       | `.`                   | Directory or file to check. Defaults to repository root.                                                                  |
+| `config`             | No       |                       | Path to `.liquibase-linter.yaml` configuration file (optional). If not specified, linter will auto-discover config files. |
+| `version`            | No       | `v0.0.2`              | Version of liquibase-linter to use (e.g., `v0.0.2` or `latest`).                                                          |
+| `fail-on-critical`   | No       | `true`                | Whether to fail the workflow on critical violations. Set to `false` for annotation-only mode.                             |
+| `pr-comment-enabled` | No       | `true`                | Whether to post/update PR comments with summary. Set to `false` to disable (requires `pull-requests: write` permission).  |
+| `token`              | No       | `${{ github.token }}` | GitHub token for creating check runs. Automatically provided.                                                             |
 
 ## Permissions
 

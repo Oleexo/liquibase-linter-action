@@ -11,6 +11,7 @@ type Inputs = {
   config: string
   version: string
   failOnCritical: boolean
+  prCommentEnabled: boolean
 }
 
 type LinterViolation = {
@@ -54,11 +55,15 @@ export const run = async (inputs: Inputs, octokit: Octokit, context: Context): P
   await createCheckRun(octokit, context, result, inputs.failOnCritical)
 
   // Post or update PR comment
-  const prNumber = getPullRequestNumber(context)
-  if (prNumber) {
-    await upsertPRComment(octokit, context, prNumber, result)
+  if (inputs.prCommentEnabled) {
+    const prNumber = getPullRequestNumber(context)
+    if (prNumber) {
+      await upsertPRComment(octokit, context, prNumber, result)
+    } else {
+      core.info('ℹ️  Skipping PR comment (not running in pull request context)')
+    }
   } else {
-    core.info('ℹ️  Skipping PR comment (not running in pull request context)')
+    core.info('ℹ️  PR comment disabled (pr-comment-enabled=false)')
   }
 
   // Log summary
@@ -258,7 +263,7 @@ const convertToRelativePath = (absolutePath: string | undefined): string => {
   }
 
   // Get the workspace path from environment or use current directory
-  const workspace = process.env.GITHUB_WORKSPACE || process.cwd()
+  const workspace = process.env['GITHUB_WORKSPACE'] || process.cwd()
 
   // If the path is already relative, return it
   if (!path.isAbsolute(absolutePath)) {

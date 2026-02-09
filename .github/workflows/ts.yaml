@@ -43,6 +43,7 @@ jobs:
           config: test_fixtures/.liquibase-linter.yaml
           version: v0.0.2
           fail-on-critical: false
+          pr-comment-enabled: false
 
   generate:
     runs-on: ubuntu-latest

@@ -17,6 +17,10 @@ inputs:
     description: Whether to fail the action on critical violations
     required: false
     default: 'true'
+  pr-comment-enabled:
+    description: Whether to post/update PR comments with summary (requires pull-requests write permission)
+    required: false
+    default: 'true'
   token:
     description: GitHub token for creating check runs
     required: true

@@ -9,6 +9,7 @@ try {
       config: core.getInput('config', { required: false }),
       version: core.getInput('version', { required: false }) || 'latest',
       failOnCritical: core.getInput('fail-on-critical', { required: false }) !== 'false',
+      prCommentEnabled: core.getInput('pr-comment-enabled', { required: false }) !== 'false',
     },
     getOctokit(),
     await getContext(),

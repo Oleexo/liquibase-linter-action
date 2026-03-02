@@ -363,4 +363,156 @@ describe('run', () => {
       ),
     ).rejects.toThrow('Linter error: File not found')
   })
+
+  describe('PR comment uniqueness by path', () => {
+    const noViolationsOutput = JSON.stringify({
+      violations: [],
+      metadata: { linter_version: '1.0.0', timestamp: '2024-02-04T10:30:00Z', files_checked: 1, total_time_ms: 50 },
+      summary: { total_violations: 0, critical: 0, warning: 0, info: 0 },
+    })
+
+    const prContext: Context = {
+      repo: { owner: 'test-owner', repo: 'test-repo' },
+      sha: 'abc123',
+      payload: { pull_request: { number: 42 } } as unknown as Context['payload'],
+    }
+
+    beforeEach(() => {
+      vi.mocked(exec.exec).mockImplementation(async (_commandLine, _args, options) => {
+        options?.listeners?.stdout?.(Buffer.from(noViolationsOutput))
+        return 0
+      })
+    })
+
+    it('should create a new comment with the path-specific marker when no existing comment exists', async () => {
+      const listComments = vi.fn().mockResolvedValue({ data: [] })
+      const createComment = vi.fn().mockResolvedValue({})
+      const updateComment = vi.fn().mockResolvedValue({})
+
+      mockOctokit = {
+        ...mockOctokit,
+        rest: {
+          ...mockOctokit.rest,
+          issues: { listComments, createComment, updateComment },
+        },
+      } as unknown as Octokit
+
+      await run(
+        { path: 'db/changelog', config: '', version: 'latest', failOnCritical: false, prCommentEnabled: true },
+        mockOctokit,
+        prContext,
+      )
+
+      expect(createComment).toHaveBeenCalledOnce()
+      expect(createComment).toHaveBeenCalledWith(
+        expect.objectContaining({
+          issue_number: 42,
+          body: expect.stringContaining('<!-- liquibase-linter-action-comment:db/changelog -->'),
+        }),
+      )
+      expect(updateComment).not.toHaveBeenCalled()
+    })
+
+    it('should update the existing path-specific comment when one is found', async () => {
+      const existingComment = {
+        id: 99,
+        body: '<!-- liquibase-linter-action-comment:db/changelog -->\n## old content',
+      }
+      const listComments = vi.fn().mockResolvedValue({ data: [existingComment] })
+      const createComment = vi.fn().mockResolvedValue({})
+      const updateComment = vi.fn().mockResolvedValue({})
+
+      mockOctokit = {
+        ...mockOctokit,
+        rest: {
+          ...mockOctokit.rest,
+          issues: { listComments, createComment, updateComment },
+        },
+      } as unknown as Octokit
+
+      await run(
+        { path: 'db/changelog', config: '', version: 'latest', failOnCritical: false, prCommentEnabled: true },
+        mockOctokit,
+        prContext,
+      )
+
+      expect(updateComment).toHaveBeenCalledOnce()
+      expect(updateComment).toHaveBeenCalledWith(
+        expect.objectContaining({
+          comment_id: 99,
+          body: expect.stringContaining('<!-- liquibase-linter-action-comment:db/changelog -->'),
+        }),
+      )
+      expect(createComment).not.toHaveBeenCalled()
+    })
+
+    it('should fall back to updating the legacy static comment when no path-specific comment exists', async () => {
+      const legacyComment = {
+        id: 77,
+        body: '<!-- liquibase-linter-action-comment -->\n## old legacy content',
+      }
+      const listComments = vi.fn().mockResolvedValue({ data: [legacyComment] })
+      const createComment = vi.fn().mockResolvedValue({})
+      const updateComment = vi.fn().mockResolvedValue({})
+
+      mockOctokit = {
+        ...mockOctokit,
+        rest: {
+          ...mockOctokit.rest,
+          issues: { listComments, createComment, updateComment },
+        },
+      } as unknown as Octokit
+
+      await run(
+        { path: 'db/changelog', config: '', version: 'latest', failOnCritical: false, prCommentEnabled: true },
+        mockOctokit,
+        prContext,
+      )
+
+      expect(updateComment).toHaveBeenCalledOnce()
+      expect(updateComment).toHaveBeenCalledWith(
+        expect.objectContaining({
+          comment_id: 77,
+          body: expect.stringContaining('<!-- liquibase-linter-action-comment:db/changelog -->'),
+        }),
+      )
+      expect(createComment).not.toHaveBeenCalled()
+    })
+
+    it('should create separate comments for different paths', async () => {
+      // Two existing comments, one per path
+      const comment1 = { id: 11, body: '<!-- liquibase-linter-action-comment:db/changelog -->' }
+      const comment2 = { id: 22, body: '<!-- liquibase-linter-action-comment:db/other -->' }
+      const listComments = vi.fn().mockResolvedValue({ data: [comment1, comment2] })
+      const createComment = vi.fn().mockResolvedValue({})
+      const updateComment = vi.fn().mockResolvedValue({})
+
+      mockOctokit = {
+        ...mockOctokit,
+        rest: {
+          ...mockOctokit.rest,
+          issues: { listComments, createComment, updateComment },
+        },
+      } as unknown as Octokit
+
+      // Run for first path
+      await run(
+        { path: 'db/changelog', config: '', version: 'latest', failOnCritical: false, prCommentEnabled: true },
+        mockOctokit,
+        prContext,
+      )
+
+      // Run for second path
+      await run(
+        { path: 'db/other', config: '', version: 'latest', failOnCritical: false, prCommentEnabled: true },
+        mockOctokit,
+        prContext,
+      )
+
+      expect(updateComment).toHaveBeenCalledTimes(2)
+      const calls = vi.mocked(updateComment).mock.calls.map((c) => c[0] as { comment_id: number })
+      expect(calls.map((c) => c.comment_id).sort()).toEqual([11, 22])
+      expect(createComment).not.toHaveBeenCalled()
+    })
+  })
 })

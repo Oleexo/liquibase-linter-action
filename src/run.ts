@@ -58,7 +58,7 @@ export const run = async (inputs: Inputs, octokit: Octokit, context: Context): P
   if (inputs.prCommentEnabled) {
     const prNumber = getPullRequestNumber(context)
     if (prNumber) {
-      await upsertPRComment(octokit, context, prNumber, result)
+      await upsertPRComment(octokit, context, prNumber, result, inputs.path)
     } else {
       core.info('ℹ️  Skipping PR comment (not running in pull request context)')
     }
@@ -319,12 +319,15 @@ const buildSummary = (result: LinterOutput): string => {
   return summaryText
 }
 
-const buildPRCommentBody = (result: LinterOutput): string => {
+const COMMENT_MARKER_LEGACY = '<!-- liquibase-linter-action-comment -->'
+const buildCommentMarker = (lintPath: string) => `<!-- liquibase-linter-action-comment:${lintPath} -->`
+
+const buildPRCommentBody = (result: LinterOutput, lintPath: string): string => {
   const { summary, metadata } = result
   const timestamp = new Date().toISOString()
 
-  let body = '<!-- liquibase-linter-action-comment -->\n'
-  body += '## 🔍 Liquibase Linter Results\n\n'
+  let body = `${buildCommentMarker(lintPath)}\n`
+  body += `## 🔍 Liquibase Linter Results \`${lintPath}\`\n\n`
 
   if (summary.total_violations === 0) {
     body += '✅ **No violations found!**\n\n'
@@ -349,14 +352,24 @@ const buildPRCommentBody = (result: LinterOutput): string => {
   return body
 }
 
-const findExistingComment = async (octokit: Octokit, context: Context, prNumber: number): Promise<number | null> => {
+const findExistingComment = async (
+  octokit: Octokit,
+  context: Context,
+  prNumber: number,
+  lintPath: string,
+): Promise<number | null> => {
   const { data: comments } = await octokit.rest.issues.listComments({
     owner: context.repo.owner,
     repo: context.repo.repo,
     issue_number: prNumber,
   })
 
-  const existingComment = comments.find((comment) => comment.body?.includes('<!-- liquibase-linter-action-comment -->'))
+  const marker = buildCommentMarker(lintPath)
+
+  // First look for a path-specific comment; fall back to legacy static marker
+  const existingComment =
+    comments.find((comment) => comment.body?.includes(marker)) ??
+    comments.find((comment) => comment.body?.includes(COMMENT_MARKER_LEGACY))
 
   return existingComment ? existingComment.id : null
 }
@@ -366,9 +379,10 @@ const upsertPRComment = async (
   context: Context,
   prNumber: number,
   result: LinterOutput,
+  lintPath: string,
 ): Promise<void> => {
-  const body = buildPRCommentBody(result)
-  const existingCommentId = await findExistingComment(octokit, context, prNumber)
+  const body = buildPRCommentBody(result, lintPath)
+  const existingCommentId = await findExistingComment(octokit, context, prNumber, lintPath)
 
   if (existingCommentId) {
     core.info(`💬 Updating existing PR comment...`)
